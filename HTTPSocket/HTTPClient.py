@@ -3,13 +3,17 @@ import tkinter as tk
 from tkinter import messagebox
 
 def send_request():
-    server_url = "https://eleven-guests-spend.loca.lt"
+    server_url = "https://f866-140-118-175-99.ngrok-free.app"
     sentence = entry.get()
     try:
-        response = requests.post(server_url, data=sentence)
+        response = requests.post(server_url, data=sentence, timeout=10)
+        response.raise_for_status()  # check if the request is successful
         result_label.config(text="From Server: " + response.text)
+        print(f"Sent: {sentence}")
+        print(f"Received: {response.text}")
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Request failed: {e}")
+        print(f"Error: {e}")
 
 # init tk window
 window = tk.Tk()
