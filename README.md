@@ -3,7 +3,7 @@
 ## Dependencies
 * *pip install requests*
 * *pip install pyinstaller*
-* make sure to installer them as administrator to add them to the environment automatically
+* make sure to install them as administrator to add them to the environment automatically
 
 ## Excuting Steps
 * Terminal type "*HTTPSocket/HTTPServer.py*"
