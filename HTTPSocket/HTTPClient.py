@@ -3,16 +3,25 @@ import tkinter as tk
 import datetime
 import time
 import json
+import random
+import string
 from tkinter import messagebox
 
 text_depth = 0
 messages = []
+clientName = ''
+
+def generate_client_name(length=5):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
 
 def create_message():
+    global clientName
     sentence = entry.get()
     date = datetime.date.today()
     current_time = time.strftime("%H:%M:%S", time.localtime())
-    message = 'client' + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
+    message = clientName + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
     send_request(message)
 
 def send_request(content):
@@ -20,9 +29,11 @@ def send_request(content):
     try:
         response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()  # check if the request is successful
-        unupdated_message = json.load(response.text)
-        messages.extend(unupdated_message)
-        print(f"Received: {response.text}")
+        unupdated_message = json.loads(response.text)
+        for item in unupdated_message:
+            if item not in messages:
+                update_canvas(item)
+                messages.append(item)
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Request failed: {e}")
         print(f"Error: {e}")
@@ -64,4 +75,5 @@ send_button.pack(side=tk.RIGHT, pady=10, padx=10)
 
 # app loop
 auto_update()
+clientName = generate_client_name()
 window.mainloop()
