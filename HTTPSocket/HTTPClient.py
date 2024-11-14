@@ -2,9 +2,11 @@ import requests
 import tkinter as tk
 import datetime
 import time
+import json
 from tkinter import messagebox
 
 text_depth = 0
+messages = []
 
 def create_message():
     sentence = entry.get()
@@ -18,6 +20,8 @@ def send_request(content):
     try:
         response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()  # check if the request is successful
+        unupdated_message = json.load(response.text)
+        messages.extend(unupdated_message)
         print(f"Received: {response.text}")
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Request failed: {e}")

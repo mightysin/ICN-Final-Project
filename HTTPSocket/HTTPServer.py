@@ -6,7 +6,7 @@ messages = []
 JSON_FILE = "messages.json" # store messages from clinent
 def save_massage(massage):
         with open(JSON_FILE, 'w') as file:
-            file.write(json.dumps(messages))
+            file.write(json.dumps(messages) + '\n')
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -16,10 +16,11 @@ class MyHandler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             sentence = post_data.decode('utf-8')
             print(f"Received: {sentence}")
-            messages.append(sentence)
-            # write message into json file
-            save_massage(sentence)
-            # send json file as response
+            if (sentence != ''):
+                messages.append(sentence)
+                # write message into json file
+                save_massage(sentence)
+                # send json file as response
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
             self.end_headers()
