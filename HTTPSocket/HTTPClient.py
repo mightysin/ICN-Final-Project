@@ -15,6 +15,7 @@ def create_message():
     message = 'client' + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
     message_list.create_text(10, text_depth * 20, anchor='nw', text=message)
     text_depth += 1
+    message_list.config(scrollregion=message_list.bbox("all"))
 
 def send_request():
     server_url = "https://f866-140-118-175-99.ngrok-free.app"
