@@ -14,7 +14,7 @@ def create_message():
     send_request(message)
 
 def send_request(content):
-    server_url = "https://f866-140-118-175-99.ngrok-free.app"
+    server_url = "https://ec3f-140-118-175-99.ngrok-free.app"
     try:
         response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()  # check if the request is successful
