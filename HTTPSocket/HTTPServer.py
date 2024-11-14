@@ -23,7 +23,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write(JSON_FILE.encode('utf-8'))
+            self.wfile.write(json.dumps(messages).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.send_header("Content-type", "text/plain")

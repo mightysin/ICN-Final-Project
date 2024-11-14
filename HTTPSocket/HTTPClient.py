@@ -18,21 +18,20 @@ def send_request(content):
     try:
         response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()  # check if the request is successful
-        print(f"Sent: {response.text}")
         print(f"Received: {response.text}")
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Request failed: {e}")
         print(f"Error: {e}")
 
-def update_canvas():
+def update_canvas(message):
     global text_depth
     message_list.create_text(10, text_depth * 20, anchor='nw', text=message)
     text_depth += 1
     message_list.config(scrollregion=message_list.bbox("all"))
 
-def auto_update(time):
+def auto_update():
     send_request('')
-    window.after(time, auto_update)  # update with server every 0.5 seconds
+    window.after(500, auto_update)  # update with server every 0.5 seconds
 
 # init tk window
 window = tk.Tk()
@@ -60,5 +59,5 @@ send_button = tk.Button(input_panel, text="Send to Server", command=create_messa
 send_button.pack(side=tk.RIGHT, pady=10, padx=10)
 
 # app loop
-auto_update(500)
+auto_update()
 window.mainloop()
