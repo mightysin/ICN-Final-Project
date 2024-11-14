@@ -4,31 +4,35 @@ import datetime
 import time
 from tkinter import messagebox
 
-messageList = []
 text_depth = 0
 
 def create_message():
-    global text_depth
     sentence = entry.get()
     date = datetime.date.today()
     current_time = time.strftime("%H:%M:%S", time.localtime())
     message = 'client' + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
-    message_list.create_text(10, text_depth * 20, anchor='nw', text=message)
-    text_depth += 1
-    message_list.config(scrollregion=message_list.bbox("all"))
+    send_request(message)
 
-def send_request():
+def send_request(content):
     server_url = "https://f866-140-118-175-99.ngrok-free.app"
-    sentence = entry.get()
     try:
-        response = requests.post(server_url, data=sentence, timeout=10)
+        response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()  # check if the request is successful
-        result_label.config(text="From Server: " + response.text)
-        print(f"Sent: {sentence}")
+        print(f"Sent: {response.text}")
         print(f"Received: {response.text}")
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Request failed: {e}")
         print(f"Error: {e}")
+
+def update_canvas():
+    global text_depth
+    message_list.create_text(10, text_depth * 20, anchor='nw', text=message)
+    text_depth += 1
+    message_list.config(scrollregion=message_list.bbox("all"))
+
+def auto_update(time):
+    send_request('')
+    window.after(time, auto_update)  # update with server every 0.5 seconds
 
 # init tk window
 window = tk.Tk()
@@ -55,4 +59,6 @@ entry.pack(side=tk.LEFT, anchor='w', pady=10, padx=10)
 send_button = tk.Button(input_panel, text="Send to Server", command=create_message)
 send_button.pack(side=tk.RIGHT, pady=10, padx=10)
 
+# app loop
+auto_update(500)
 window.mainloop()
