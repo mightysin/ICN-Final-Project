@@ -24,6 +24,7 @@ def create_message():
     current_time = time.strftime("%H:%M:%S", time.localtime())
     message = clientName + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
     send_request(message)
+    entry.delete(0, tk.END)
 
 def send_request(content):
     server_url = "https://17e1-140-118-175-99.ngrok-free.app"
