@@ -6,19 +6,25 @@ import time
 
 # 全局變數儲存訊息
 messages = []
-JSON_FILE = "messages.json"  # 儲存文字訊息的檔案
+JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
 
 def save_message():
     """保存訊息到 JSON 文件"""
     with open(JSON_FILE, 'w') as file:
-        file.write(json.dumps(messages) + '\n')
+        file.write(json.dumps(messages))
+
+
+def generate_image_url(image_path, server_host):
+    """生成公開的圖片 URL"""
+    if "ngrok" in server_host:
+        return f"https://{server_host}/get_image/{os.path.basename(image_path)}"
+    return f"http://{server_host}/get_image/{os.path.basename(image_path)}"
 
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
-            # 處理影像上傳
             if self.path == "/upload_image":
                 content_length = int(self.headers['Content-Length'])
                 post_data = self.rfile.read(content_length)
@@ -38,13 +44,16 @@ class MyHandler(BaseHTTPRequestHandler):
                 with open(image_path, "wb") as f:
                     f.write(base64.b64decode(image_data))
 
-                # 創建消息格式
+                # 使用公開 URL
+                server_host = self.headers['Host']
+                image_url = generate_image_url(image_path, server_host)
+
+                # 返回圖片訊息
                 timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                image_message = f"{sender}({timestamp}) -> [Image Uploaded: {image_path}]"
+                image_message = f"{sender}({timestamp}) -> [Image Uploaded: {image_url}]"
                 messages.append(image_message)
                 save_message()
 
-                # 回應完整的消息列表
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(json.dumps(messages).encode('utf-8'))
@@ -55,9 +64,10 @@ class MyHandler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             sentence = post_data.decode('utf-8')
             print(f"Received: {sentence}")
-            if sentence != '':
+            if sentence:
                 messages.append(sentence)
                 save_message()
+
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(messages).encode('utf-8'))
@@ -82,9 +92,15 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
             self.wfile.write(b"Image not found")
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(f"Server error: {e}".encode('utf-8'))
+            print(f"Error: {e}")
 
 
+# 啟動伺服器
 serverPort = 12000
-server = HTTPServer(('localhost', serverPort), MyHandler)
+server = HTTPServer(('0.0.0.0', serverPort), MyHandler)
 print(f"Server started at http://localhost:{serverPort}")
 server.serve_forever()

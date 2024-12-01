@@ -30,7 +30,7 @@ def create_message():
 
 
 def send_request(content):
-    server_url = "http://localhost:12000"  # 若使用 ngrok，替換為公開 URL
+    server_url = " https://7968-118-150-218-49.ngrok-free.app"  # 若使用 ngrok，替換為公開 URL
     try:
         response = requests.post(server_url, data=content, timeout=10)
         response.raise_for_status()
@@ -45,7 +45,7 @@ def send_request(content):
 
 
 def send_image(image_path):
-    server_url = "http://localhost:12000/upload_image"  # 若使用 ngrok，替換為公開 URL
+    server_url = "https://7968-118-150-218-49.ngrok-free.app/upload_image"
     try:
         with open(image_path, "rb") as img_file:
             image_data = base64.b64encode(img_file.read()).decode('utf-8')
@@ -59,12 +59,15 @@ def send_image(image_path):
                 messages.append(item)
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Image upload failed: {e}")
-        print(f"Error: {e}")
 
 
-def display_image(image_path):
+
+
+def display_image(image_url):
     try:
-        img = Image.open(image_path)
+        response = requests.get(image_url, stream=True, timeout=10)  # 增加超時限制
+        response.raise_for_status()
+        img = Image.open(response.raw)
         img.thumbnail((300, 300))  # 縮放圖片
         photo = ImageTk.PhotoImage(img)
 
@@ -79,8 +82,12 @@ def display_image(image_path):
         if not hasattr(message_list, "image_refs"):
             message_list.image_refs = []
         message_list.image_refs.append(photo)
+    except requests.exceptions.RequestException as e:
+        print(f"Error loading image: {e}")
+        messagebox.showerror("Error", f"Unable to load image: {e}")
     except Exception as e:
         print(f"Error displaying image: {e}")
+        messagebox.showerror("Error", f"Unexpected error: {e}")
 
 
 def update_canvas(message):
@@ -96,8 +103,6 @@ def update_canvas(message):
         message_list.insert(tk.END, message + "\n")
     message_list.config(state="disabled")
     message_list.see(tk.END)
-
-
 
 def upload_image():
     file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
