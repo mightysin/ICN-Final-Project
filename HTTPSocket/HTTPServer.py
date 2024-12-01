@@ -9,7 +9,7 @@ messages = []
 JSON_FILE = "messages.json"  # 儲存文字訊息的檔案
 
 
-def save_message(message):
+def save_message():
     """保存訊息到 JSON 文件"""
     with open(JSON_FILE, 'w') as file:
         file.write(json.dumps(messages) + '\n')
@@ -25,10 +25,11 @@ class MyHandler(BaseHTTPRequestHandler):
                 data = json.loads(post_data.decode('utf-8'))
 
                 image_data = data.get("image")
-                if not image_data:
+                sender = data.get("sender")
+                if not image_data or not sender:
                     self.send_response(400)
                     self.end_headers()
-                    self.wfile.write(b"No image data provided")
+                    self.wfile.write(b"No image data or sender provided")
                     return
 
                 # 儲存影像
@@ -37,12 +38,16 @@ class MyHandler(BaseHTTPRequestHandler):
                 with open(image_path, "wb") as f:
                     f.write(base64.b64decode(image_data))
 
-                # 返回影像的 HTTP URL
-                image_url = f"http://localhost:12000/get_image/{os.path.basename(image_path)}"
+                # 創建消息格式
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                image_message = f"{sender}({timestamp}) -> [Image Uploaded: {image_path}]"
+                messages.append(image_message)
+                save_message()
+
+                # 回應完整的消息列表
                 self.send_response(200)
                 self.end_headers()
-                response_data = {"status": "success", "url": image_url}
-                self.wfile.write(json.dumps(response_data).encode('utf-8'))
+                self.wfile.write(json.dumps(messages).encode('utf-8'))
                 return
 
             # 處理文字訊息
@@ -52,7 +57,7 @@ class MyHandler(BaseHTTPRequestHandler):
             print(f"Received: {sentence}")
             if sentence != '':
                 messages.append(sentence)
-                save_message(sentence)
+                save_message()
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(messages).encode('utf-8'))

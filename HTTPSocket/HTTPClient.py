@@ -24,7 +24,7 @@ def create_message():
     sentence = entry.get()
     date = datetime.date.today()
     current_time = time.strftime("%H:%M:%S", time.localtime())
-    message = clientName + '(' + str(date) + ' ' + current_time + ')' + ' -> ' + sentence
+    message = f"{clientName}({date} {current_time}) -> {sentence}"
     send_request(message)
     entry.delete(0, tk.END)
 
@@ -49,23 +49,22 @@ def send_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
             image_data = base64.b64encode(img_file.read()).decode('utf-8')
-        payload = {"image": image_data}
+        payload = {"image": image_data, "sender": clientName}
         response = requests.post(server_url, json=payload, timeout=10)
         response.raise_for_status()
-        response_data = json.loads(response.text)
-        if response_data.get("status") == "success":
-            image_url = response_data["url"]
-            update_canvas(f"Uploaded image: {image_url}", is_image=True)
+        unupdated_message = json.loads(response.text)
+        for item in unupdated_message:
+            if item not in messages:
+                update_canvas(item)
+                messages.append(item)
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Error", f"Image upload failed: {e}")
         print(f"Error: {e}")
 
 
-def display_image(image_url):
+def display_image(image_path):
     try:
-        response = requests.get(image_url, stream=True)
-        response.raise_for_status()
-        img = Image.open(response.raw)
+        img = Image.open(image_path)
         img.thumbnail((300, 300))  # 縮放圖片
         photo = ImageTk.PhotoImage(img)
 
@@ -84,19 +83,20 @@ def display_image(image_url):
         print(f"Error displaying image: {e}")
 
 
-def update_canvas(message, is_image=False):
+def update_canvas(message):
     message_list.config(state="normal")
-    if is_image:
-        # 顯示圖片 URL
-        message_list.insert(tk.END, f"{message}\n")
-        # 提取圖片 URL 並顯示
-        image_url = message.split(": ")[-1].strip()
-        display_image(image_url)
+    if "[Image Uploaded:" in message:
+        # 提取圖片路徑
+        image_path = message.split("[Image Uploaded: ")[1].strip("]")
+        # 顯示圖片消息
+        message_list.insert(tk.END, message.split(" -> ")[0] + " -> [Image]\n")
+        display_image(image_path)
     else:
         # 顯示普通文字
         message_list.insert(tk.END, message + "\n")
     message_list.config(state="disabled")
     message_list.see(tk.END)
+
 
 
 def upload_image():
