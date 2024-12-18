@@ -3,17 +3,16 @@ import json
 import base64
 import os
 import time
+import socket
 
 # 全局變數儲存訊息
 messages = []
 JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
-
 def save_message():
     """保存訊息到 JSON 文件"""
     with open(JSON_FILE, 'w') as file:
         file.write(json.dumps(messages))
-
 
 def generate_image_url(image_path, server_host):
     """生成公開的圖片 URL"""
@@ -21,6 +20,13 @@ def generate_image_url(image_path, server_host):
         return f"https://{server_host}/get_image/{os.path.basename(image_path)}"
     return f"http://{server_host}/get_image/{os.path.basename(image_path)}"
 
+def send_to_database(data):
+    """Send data to the database server via TCP socket"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+        db_socket.connect(('localhost', 13000))  # Assuming the database server is on the same machine
+        db_socket.sendall(json.dumps(data).encode('utf-8'))
+        response = db_socket.recv(4096).decode('utf-8')
+        return json.loads(response)
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -54,9 +60,12 @@ class MyHandler(BaseHTTPRequestHandler):
                 messages.append(image_message)
                 save_message()
 
+                # Send to database
+                db_response = send_to_database({"type": "image", "sender": sender, "timestamp": timestamp, "image_url": image_url})
+
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(json.dumps(messages).encode('utf-8'))
+                self.wfile.write(json.dumps(db_response).encode('utf-8'))
                 return
 
             # 處理文字訊息
@@ -68,9 +77,12 @@ class MyHandler(BaseHTTPRequestHandler):
                 messages.append(sentence)
                 save_message()
 
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(json.dumps(messages).encode('utf-8'))
+                # Send to database
+                db_response = send_to_database({"type": "message", "message": sentence})
+
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps(db_response).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.end_headers()
@@ -97,7 +109,6 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"Server error: {e}".encode('utf-8'))
             print(f"Error: {e}")
-
 
 # 啟動伺服器
 serverPort = 12000

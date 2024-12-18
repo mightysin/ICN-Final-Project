@@ -18,4 +18,4 @@
 * Use the third terminal, type "*pyinstaller --onefile --windowed HTTPSocket/HTTPClient.py*"
 * The excutable file will be in *dist* directory
 * Make sure the 1st(server) and 2nd(ngrok) terminal keep running
-* Now you can excute "*HTTPClient.exe*" in any other device and network
+* Now you can execute "*HTTPClient.exe*" in any other device and network
