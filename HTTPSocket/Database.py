@@ -1,7 +1,7 @@
 import socket
 
-tcp_server_ip = '192.168.0.127'
-tcp_server_port = 8080
+server_ip = '192.168.0.127'
+server_port = 8080
 database_ip = '192.168.0.167'
 database_port = 8080
 
@@ -17,7 +17,7 @@ def tcp_main_loop():
     try:
       # Connect to the database
       with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_server_socket:
-        tcp_server_socket.connect((tcp_server_ip, tcp_server_port))
+        tcp_server_socket.connect((server_ip, server_port))
         connected = True
         print("Connected to server!")
         # Your existing code for sending data to the database can go here
@@ -28,5 +28,7 @@ def tcp_main_loop():
         connected = False
     
 
-db_socket = build_tcp_socket(database_ip, database_port)
+db_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+db_socket.bind((database_ip, database_port))
+db_socket.listen(5)
 tcp_main_loop()

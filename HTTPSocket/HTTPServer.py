@@ -12,8 +12,8 @@ JSON_FILE = "messages.json"  # 儲存訊息的檔案
 # variables
 http_server_port = 12000
 http_server_ip = '0.0.0.0'
-tcp_ip = '192.168.0.127'
-tcp_socket_port = 8080
+server_ip = '192.168.0.127'
+server_port = 8080
 database_ip = '192.168.0.167'
 database_port = 8080
 
@@ -128,7 +128,7 @@ def send_to_database(data):
 
 # TCP Functions
 def build_tcp_socket(ip, portNumber):
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket = 
     tcp_socket.bind((ip, portNumber))
     return tcp_socket
 
@@ -155,5 +155,7 @@ def tcp_main_loop():
 http_server = build_http_server(MyHandler)
 http_server.serve_forever()
 
-tcp_sokcet = build_tcp_socket(tcp_ip, tcp_socket_port)
+s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s_socket.bind((server_ip, server_port))
+s_socket.listen(5)
 # tcp_main_loop(tcp_sokcet)
