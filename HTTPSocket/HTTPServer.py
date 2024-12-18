@@ -127,10 +127,10 @@ def send_to_database(data):
         return json.loads(response)
 
 # TCP Functions
-def build_tcp_socket(ip, portNumber):
-    tcp_socket = 
-    tcp_socket.bind((ip, portNumber))
-    return tcp_socket
+# def build_tcp_socket(ip, portNumber):
+#     # tcp_socket = 
+#     tcp_socket.bind((ip, portNumber))
+#     return tcp_socket
 
 def tcp_main_loop():
   """Continuously checks connection with the database and sends a message if disconnected."""
