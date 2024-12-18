@@ -9,24 +9,15 @@ import socket
 messages = []
 JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
-def save_message():
-    """保存訊息到 JSON 文件"""
-    with open(JSON_FILE, 'w') as file:
-        file.write(json.dumps(messages))
+# variables
+http_server_port = 12000
+http_server_ip = '0.0.0.0'
+tcp_ip = '192.168.0.127'
+tcp_socket_port = 8080
+database_ip = '192.168.0.167'
+database_port = 8080
 
-def generate_image_url(image_path, server_host):
-    """生成公開的圖片 URL"""
-    if "ngrok" in server_host:
-        return f"https://{server_host}/get_image/{os.path.basename(image_path)}"
-    return f"http://{server_host}/get_image/{os.path.basename(image_path)}"
-
-def send_to_database(data):
-    """Send data to the database server via TCP socket"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-        db_socket.connect(('localhost', 13000))  # Assuming the database server is on the same machine
-        db_socket.sendall(json.dumps(data).encode('utf-8'))
-        response = db_socket.recv(4096).decode('utf-8')
-        return json.loads(response)
+tickingTime = 10
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -110,8 +101,52 @@ class MyHandler(BaseHTTPRequestHandler):
             self.wfile.write(f"Server error: {e}".encode('utf-8'))
             print(f"Error: {e}")
 
+# HTTP Functions
+def build_http_server(Myhandler):
+    server = HTTPServer((http_server_ip, http_server_port), MyHandler)
+    print(f"Server started at http://localhost:{http_server_port}")
+    return server
+
+def save_message():
+    """保存訊息到 JSON 文件"""
+    with open(JSON_FILE, 'w') as file:
+        file.write(json.dumps(messages))
+
+def generate_image_url(image_path, server_host):
+    """生成公開的圖片 URL"""
+    if "ngrok" in server_host:
+        return f"https://{server_host}/get_image/{os.path.basename(image_path)}"
+    return f"http://{server_host}/get_image/{os.path.basename(image_path)}"
+
+def send_to_database(data):
+    """Send data to the database server via TCP socket"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+        db_socket.connect(('localhost', 13000))  # Assuming the database server is on the same machine
+        db_socket.sendall(json.dumps(data).encode('utf-8'))
+        response = db_socket.recv(4096).decode('utf-8')
+        return json.loads(response)
+
+# TCP Functions
+def build_tcp_socket(ip, portNumber):
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind((ip, portNumber))
+    return tcp_socket
+
+def tcp_main_loop(socket):
+    connected = True
+    while True:
+        try:
+            socket.listen(1)
+            socket.connect(database_ip, database_port)
+            print(f"Connected to database")
+        except socket.error as e:
+            print(f"Error connecting to database")
+            connected = False
+
+
 # 啟動伺服器
-serverPort = 12000
-server = HTTPServer(('0.0.0.0', serverPort), MyHandler)
-print(f"Server started at http://localhost:{serverPort}")
-server.serve_forever()
+http_server = build_http_server(MyHandler)
+http_server.serve_forever()
+
+tcp_sokcet = build_tcp_socket(tcp_ip, tcp_socket_port)
+tcp_main_loop(tcp_sokcet)
