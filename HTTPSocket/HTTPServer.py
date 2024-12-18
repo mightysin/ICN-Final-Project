@@ -132,16 +132,23 @@ def build_tcp_socket(ip, portNumber):
     tcp_socket.bind((ip, portNumber))
     return tcp_socket
 
-def tcp_main_loop(socket):
-    connected = True
-    while True:
-        try:
-            socket.listen(1)
-            socket.connect(database_ip, database_port)
-            print(f"Connected to database")
-        except socket.error as e:
-            print(f"Error connecting to database")
-            connected = False
+def tcp_main_loop():
+  """Continuously checks connection with the database and sends a message if disconnected."""
+  connected = False
+  while True:
+    try:
+      # Connect to the database
+      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+        db_socket.connect((database_ip, database_port))
+        connected = True
+        print("Connected to database!")
+        # Your existing code for sending data to the database can go here
+        # ...
+    except (ConnectionRefusedError, OSError) as e:
+      if connected:
+        print(f"Database connection lost: {e}")
+        connected = False
+    
 
 
 # 啟動伺服器
@@ -149,4 +156,4 @@ http_server = build_http_server(MyHandler)
 http_server.serve_forever()
 
 tcp_sokcet = build_tcp_socket(tcp_ip, tcp_socket_port)
-tcp_main_loop(tcp_sokcet)
+# tcp_main_loop(tcp_sokcet)
