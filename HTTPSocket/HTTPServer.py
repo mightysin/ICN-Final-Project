@@ -4,6 +4,7 @@ import base64
 import os
 import time
 import socket
+import threading
 
 # 全局變數儲存訊息
 messages = []
@@ -12,13 +13,12 @@ JSON_FILE = "messages.json"  # 儲存訊息的檔案
 # variables
 http_server_port = 12000
 http_server_ip = '0.0.0.0'
-server_ip = '192.168.0.127'
-server_port = 8080
-database_ip = '192.168.0.167'
-database_port = 8080
+server_ip = '192.168.1.127'
+server_port = 1274
+database_ip = '192.168.1.178'
+database_port = 1274
 
-tickingTime = 10
-
+# HTTP Handler
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
@@ -102,60 +102,65 @@ class MyHandler(BaseHTTPRequestHandler):
             print(f"Error: {e}")
 
 # HTTP Functions
+# --------------------------------
+# Set up HTTP server
 def build_http_server(Myhandler):
     server = HTTPServer((http_server_ip, http_server_port), MyHandler)
     print(f"Server started at http://localhost:{http_server_port}")
     return server
-
+# Save messages from HTTP connections
 def save_message():
     """保存訊息到 JSON 文件"""
     with open(JSON_FILE, 'w') as file:
         file.write(json.dumps(messages))
-
+# Save images from HTTP connections
 def generate_image_url(image_path, server_host):
     """生成公開的圖片 URL"""
     if "ngrok" in server_host:
         return f"https://{server_host}/get_image/{os.path.basename(image_path)}"
     return f"http://{server_host}/get_image/{os.path.basename(image_path)}"
 
+
+# TCP Functions
+# --------------------------------
+# TCP loop
+def tcp_main_loop():
+    """Continuously checks connection with the database and sends a message if disconnected."""
+    connected = False
+    while True:
+            try:
+                # Connect to the database
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+                    db_socket.connect((database_ip, database_port))
+                    connected = True
+                    print("Connected to database!")
+            except (ConnectionRefusedError, OSError) as e:
+                print(f"Database connection lost: {e}")
+                if connected:
+                    connected = False
+# Open another thread to maintain TCP communication
+def start_tcp_threading():
+    s_thread = threading.Thread(target=tcp_main_loop)
+    s_thread.daemon = True
+    s_thread.start()
+# Send data through TCP to database
 def send_to_database(data):
     """Send data to the database server via TCP socket"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-        db_socket.connect(('localhost', 13000))  # Assuming the database server is on the same machine
+        db_socket.connect((' ', 13000))  # Assuming the database server is on the same machine
         db_socket.sendall(json.dumps(data).encode('utf-8'))
         response = db_socket.recv(4096).decode('utf-8')
         return json.loads(response)
 
-# TCP Functions
-# def build_tcp_socket(ip, portNumber):
-#     # tcp_socket = 
-#     tcp_socket.bind((ip, portNumber))
-#     return tcp_socket
 
-def tcp_main_loop():
-  """Continuously checks connection with the database and sends a message if disconnected."""
-  connected = False
-  while True:
-    try:
-      # Connect to the database
-      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-        db_socket.connect((database_ip, database_port))
-        connected = True
-        print("Connected to database!")
-        # Your existing code for sending data to the database can go here
-        # ...
-    except (ConnectionRefusedError, OSError) as e:
-      if connected:
-        print(f"Database connection lost: {e}")
-        connected = False
-    
-
-
-# 啟動伺服器
-http_server = build_http_server(MyHandler)
-http_server.serve_forever()
-
+# Program body
+# --------------------------------
+# Build up TCP socket
 s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_socket.bind((server_ip, server_port))
 s_socket.listen(5)
-# tcp_main_loop(tcp_sokcet)
+start_tcp_threading()
+
+# Set HTTP Server and Handler
+http_server = build_http_server(MyHandler)
+http_server.serve_forever()
