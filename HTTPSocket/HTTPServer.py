@@ -17,7 +17,7 @@ server_ip = '192.168.1.127'
 server_port = 1274
 database_ip = '192.168.1.178'
 database_port = 1274
-
+message_type = ['text', 'image']
 
 # HTTP Handler
 class MyHandler(BaseHTTPRequestHandler):
@@ -53,7 +53,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 save_message()
 
                 # Send to database
-                db_response = send_to_database({"type": "image", "sender": sender, "timestamp": timestamp, "image_url": image_url})
+                db_response = transmit_objects("image", data)
 
                 self.send_response(200)
                 self.end_headers()
@@ -68,13 +68,8 @@ class MyHandler(BaseHTTPRequestHandler):
             if sentence:
                 messages.append(sentence)
                 save_message()
+                send_to_database("text", sentence) # Send to database
 
-                # Send to database
-                db_response = send_to_database({"type": "message", "message": sentence})
-
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(json.dumps(db_response).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.end_headers()
@@ -125,38 +120,23 @@ def generate_image_url(image_path, server_host):
 
 # TCP Functions
 # --------------------------------
-# TCP loop
-def tcp_main_loop():
-    # """Continuously checks connection with the database and sends a message if disconnected."""
-    # connected = False
-    # while True:
-    #         try:
-    #             # Connect to the database
-    #             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-    #                 db_socket.connect((database_ip, database_port))
-    #                 connected = True
-    #                 print("Connected to database!")
-    #         except (ConnectionRefusedError, OSError) as e:
-    #             print(f"Database connection lost: {e}")
-    #             if connected:
-    #                 connected = False
-    while True:
-        send_to_database()
-        time.sleep(0.5)
-# Open another thread to maintain TCP communication
-def start_tcp_threading():
-    s_thread = threading.Thread(target=tcp_main_loop)
-    s_thread.daemon = True
-    s_thread.start()
 # Send data through TCP to database
-def send_to_database():
+def transmit_objects(type, data):
     """Send data to the database server via TCP socket"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
         db_socket.connect((database_ip, database_port))  # Assuming the database server is on the same machine
-        db_socket.sendall('hello world'.encode('utf-8'))
+        if type == "text":
+            db_socket.sendall(data.encode('utf-8'))
+        elif type == "image":
+            db_socket.sendall(json.dumps(data).encode('utf-8'))
         response = db_socket.recv(4096).decode('utf-8')
         print(response)
         #return json.loads(response)
+# Open another thread to maintain TCP communication
+def send_to_database(type, data):
+    s_thread = threading.Thread(target=transmit_objects(type, data))
+    s_thread.daemon = True
+    s_thread.start()
 
 
 # Program body
@@ -164,7 +144,7 @@ def send_to_database():
 # Build up TCP socket
 s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_socket.bind((server_ip, server_port))
-start_tcp_threading()
+#start_tcp_threading()
 
 
 # Set HTTP Server and Handler
