@@ -1,34 +1,26 @@
 import socket
 
-server_ip = '192.168.0.127'
-server_port = 8080
-database_ip = '192.168.0.167'
-database_port = 8080
+server_ip = '192.168.1.127'
+server_port = 1274
+database_ip = '192.168.1.178'
+database_port = 1274
 
-def build_tcp_socket(ip, portNumber):
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.bind((ip, portNumber))
-    return tcp_socket
+def main_loop():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.bind((database_ip, database_port))
+        server_socket.listen(5)
 
-def tcp_main_loop():
-  """Continuously checks connection with the database and sends a message if disconnected."""
-  connected = False
-  while True:
-    try:
-      # Connect to the database
-      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_server_socket:
-        tcp_server_socket.connect((server_ip, server_port))
-        connected = True
-        print("Connected to server!")
-        # Your existing code for sending data to the database can go here
-        # ...
-    except (ConnectionRefusedError, OSError) as e:
-      if connected:
-        print(f"Server connection lost: {e}")
-        connected = False
-    
+        while True:
+            conn, addr = server_socket.accept()
+            with conn:
+                print(f"Connected by {addr}")
+                while True:
+                    data = conn.recv(1024)
+                    if not data:
+                        break
+                    message = data.decode()
+                    print(f"Received message: {message}")
+                    conn.sendall("got message".encode())
 
-db_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-db_socket.bind((database_ip, database_port))
-db_socket.listen(5)
-tcp_main_loop()
+if __name__ == "__main__":
+    main_loop()

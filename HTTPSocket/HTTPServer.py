@@ -18,6 +18,7 @@ server_port = 1274
 database_ip = '192.168.1.178'
 database_port = 1274
 
+
 # HTTP Handler
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -101,6 +102,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.wfile.write(f"Server error: {e}".encode('utf-8'))
             print(f"Error: {e}")
 
+
 # HTTP Functions
 # --------------------------------
 # Set up HTTP server
@@ -125,32 +127,36 @@ def generate_image_url(image_path, server_host):
 # --------------------------------
 # TCP loop
 def tcp_main_loop():
-    """Continuously checks connection with the database and sends a message if disconnected."""
-    connected = False
+    # """Continuously checks connection with the database and sends a message if disconnected."""
+    # connected = False
+    # while True:
+    #         try:
+    #             # Connect to the database
+    #             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+    #                 db_socket.connect((database_ip, database_port))
+    #                 connected = True
+    #                 print("Connected to database!")
+    #         except (ConnectionRefusedError, OSError) as e:
+    #             print(f"Database connection lost: {e}")
+    #             if connected:
+    #                 connected = False
     while True:
-            try:
-                # Connect to the database
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-                    db_socket.connect((database_ip, database_port))
-                    connected = True
-                    print("Connected to database!")
-            except (ConnectionRefusedError, OSError) as e:
-                print(f"Database connection lost: {e}")
-                if connected:
-                    connected = False
+        send_to_database()
+        time.sleep(0.5)
 # Open another thread to maintain TCP communication
 def start_tcp_threading():
     s_thread = threading.Thread(target=tcp_main_loop)
     s_thread.daemon = True
     s_thread.start()
 # Send data through TCP to database
-def send_to_database(data):
+def send_to_database():
     """Send data to the database server via TCP socket"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
-        db_socket.connect((' ', 13000))  # Assuming the database server is on the same machine
-        db_socket.sendall(json.dumps(data).encode('utf-8'))
+        db_socket.connect((database_ip, database_port))  # Assuming the database server is on the same machine
+        db_socket.sendall('hello world'.encode('utf-8'))
         response = db_socket.recv(4096).decode('utf-8')
-        return json.loads(response)
+        print(response)
+        #return json.loads(response)
 
 
 # Program body
@@ -158,8 +164,8 @@ def send_to_database(data):
 # Build up TCP socket
 s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_socket.bind((server_ip, server_port))
-s_socket.listen(5)
 start_tcp_threading()
+
 
 # Set HTTP Server and Handler
 http_server = build_http_server(MyHandler)
