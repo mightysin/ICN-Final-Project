@@ -6,15 +6,18 @@ import time
 import socket
 
 # 全局變數儲存訊息
-messages = []
+messages = ['test1', 'test2', 'test3']
 JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
-stop_signal = False
 
+# Global variables
+stop_signal = False
 server_ip = '192.168.1.127'
 server_port = 1274
 database_ip = '192.168.1.178'
 database_port = 1274
+
+
 
 def save_message():
     """保存訊息到 JSON 文件"""
@@ -116,31 +119,28 @@ class MyHandler(BaseHTTPRequestHandler):
 def backup_to_database():
     """備份訊息到資料庫"""
     try:
-        _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _sock.connect((database_ip, database_port))        
-        for message in messages:
-            sock.sendall(json.dumps(message).encode('utf-8'))
-            # 如果需要確認，接收回應
-            response = sock.recv(4096).decode('utf-8')
-            print(f"Response from database: {response}")
-        sock.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_sock: 
+            s_sock.connect((database_ip, database_port))        
+            for message in messages:
+                s_sock.sendall(json.dumps(message).encode('utf-8'))
+                # 如果需要確認，接收回應
+                response = s_sock.recv(4096).decode('utf-8')
+                print(f"Response from database: {response}")
+            s_sock.close()
     except Exception as e:
         print(f"Error: {e}")
 
 # 啟動伺服器
 serverPort = 12000
 server = HTTPServer(('0.0.0.0', serverPort), MyHandler)
-# thread = threading.Thread(target=wait_stop_signal)
-# thread.start()
+
 print(f"Server started at http://localhost:{serverPort}")
 # server.serve_forever()
-while True:
-    server.handle_request()
-    if stop_signal:
-        print("Server stopped")
-        break
-server.shutdown()
+# while True:
+#     server.handle_request()
+#     if stop_signal:
+#         print("Server stopped")
+#         break
+# server.server_close()
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.bind((server_ip, server_port))
 backup_to_database()

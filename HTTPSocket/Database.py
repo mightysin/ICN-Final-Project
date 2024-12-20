@@ -27,12 +27,12 @@ def save_image_to_folder(image_data, image_name):
         f.write(base64.b64decode(image_data))
 
 def main_loop():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind((database_ip, database_port))
-        server_socket.listen(5)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
+        db_socket.bind((database_ip, database_port))
+        db_socket.listen(5)
 
         while True:
-            conn, addr = server_socket.accept()
+            conn, addr = db_socket.accept()
             with conn:
                 print(f"Connected by {addr}")
                 while True:
