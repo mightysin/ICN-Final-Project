@@ -125,7 +125,7 @@ def backup_to_database():
                 s_sock.sendall(message.encode('utf-8')) # Send text object to database
                 if "uploaded_image_" in message:
                     start_index = message.find("uploaded_image_") # Sendn image object to database
-                    image_name = message[start_index:-1]
+                    image_name = message[start_index:-1].split()[0]
                     with open(os.path.join("uploads", f"{image_name}"), "rb") as f:
                         image_data = f.read()
                         s_sock.sendall(image_data)

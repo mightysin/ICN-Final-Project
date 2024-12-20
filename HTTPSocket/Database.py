@@ -38,11 +38,10 @@ def main_loop():
                     text_data = conn.recv(4096).decode('utf-8')
                     if not text_data:
                         break
-                    
                     # 保存文本消息
                     save_text_to_json(text_data)
                     print(f"Received text: {text_data}")
-                    
+
                     # 檢查是否有圖片數據需要接收
                     if "uploaded_image_" in text_data:
                         # 提取圖片名稱
@@ -58,10 +57,13 @@ def main_loop():
                                 break
                             image_data += chunk
                         
-                        # 保存圖片數據
-                        save_image_to_folder(image_data, image_name)
-                        print(f"Received image: {image_name}")
-
+                        # 確保圖片數據不為空
+                        if image_data:
+                            save_image_to_folder(image_data, image_name)
+                            print(f"Received image: {image_name}")
+                        else:
+                            print("No image data received.")
+                    
                     # 回應客戶端
                     conn.sendall(b"Data received successfully")
 
