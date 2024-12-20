@@ -6,7 +6,7 @@ import time
 import socket
 
 # 全局變數儲存訊息
-messages = ['test1', 'test2', 'test3']
+messages = []
 JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
 
@@ -83,7 +83,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(messages).encode('utf-8'))
             
-            if "exit" in sentence:
+            if "STOPSERVER" in sentence:
                 stop_signal = True
 
         except Exception as e:
@@ -122,10 +122,14 @@ def backup_to_database():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_sock: 
             s_sock.connect((database_ip, database_port))        
             for message in messages:
-                s_sock.sendall(json.dumps(message).encode('utf-8'))
-                # 如果需要確認，接收回應
-                response = s_sock.recv(4096).decode('utf-8')
-                print(f"Response from database: {response}")
+                s_sock.sendall(message.encode('utf-8')) # Send text object to database
+                if "uploaded_image_" in message:
+                    start_index = message.find("uploaded_image_") # Sendn image object to database
+                    image_name = message[start_index:]
+                    with open(os.path.join("uploads", f"{image_name}.png"), "rb") as f:
+                        image_data = f.read()
+                        s_sock.sendall(image_data)
+                print(f"Response from database: {s_sock.recv(4096).decode('utf-8')}") # Print response from database
             s_sock.close()
     except Exception as e:
         print(f"Error: {e}")
@@ -135,12 +139,11 @@ serverPort = 12000
 server = HTTPServer(('0.0.0.0', serverPort), MyHandler)
 
 print(f"Server started at http://localhost:{serverPort}")
-# server.serve_forever()
-# while True:
-#     server.handle_request()
-#     if stop_signal:
-#         print("Server stopped")
-#         break
-# server.server_close()
+while True:
+    server.handle_request()
+    if stop_signal:
+        print("Server stopped")
+        break
+server.server_close()
 
 backup_to_database()
