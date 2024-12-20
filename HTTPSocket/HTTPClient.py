@@ -11,6 +11,7 @@ from PIL import Image, ImageTk
 
 messages = []
 clientName = ''
+server_url= "https://7328-182-235-182-47.ngrok-free.app" # 替換為你的 ngrok URL
 
 def generate_client_name(length=5):
     characters = string.ascii_letters + string.digits
@@ -27,7 +28,7 @@ def create_message():
     entry.delete(0, tk.END)
 
 def send_request(content):
-    server_url = "https://7328-182-235-182-47.ngrok-free.app"  # 替換為你的 ngrok URL
+    global server_url
     try:
         response = requests.post(server_url, json=content, timeout=10)
         response.raise_for_status()
@@ -41,7 +42,8 @@ def send_request(content):
         print(f"Error: {e}")
 
 def send_image(image_path):
-    server_url = "https://7328-182-235-182-47.ngrok-free.app/upload_image"  # 替換為你的 ngrok URL
+    global server_url
+    server_url =  server_url + "/upload_image"  # 替換為你的 ngrok URL
     try:
         with open(image_path, "rb") as img_file:
             image_data = base64.b64encode(img_file.read()).decode('utf-8')
