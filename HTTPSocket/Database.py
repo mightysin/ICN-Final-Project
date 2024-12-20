@@ -29,26 +29,14 @@ def main_loop():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as db_socket:
         db_socket.bind((database_ip, database_port))
         db_socket.listen(5)
+        wait_for_imagedata = False
         while True:
             conn, addr = db_socket.accept()
             with conn:
                 print(f"Connected by {addr}")
                 while True:
-                    # 接收文本消息
-                    text_data = conn.recv(4096).decode('utf-8')
-                    if not text_data:
-                        break
-                    # 保存文本消息
-                    save_text_to_json(text_data)
-                    print(f"Received text: {text_data}")
 
-                    # 檢查是否有圖片數據需要接收
-                    if "uploaded_image_" in text_data:
-                        # 提取圖片名稱
-                        start_index = text_data.find("uploaded_image_")
-                        image_name = text_data[start_index:].split()[0]  # 獲取圖片名稱
-                        image_name = f"{image_name}.png"  # 加上文件擴展名
-                        
+                    if wait_for_imagedata:
                         # 接收圖片數據
                         image_data = b''
                         while True:
@@ -63,6 +51,25 @@ def main_loop():
                             print(f"Received image: {image_name}")
                         else:
                             print("No image data received.")
+
+                    # 接收文本消息
+                    text_data = conn.recv(4096).decode('utf-8')
+                    if not text_data:
+                        break
+                    # 保存文本消息
+                    save_text_to_json(text_data)
+                    print(f"Received text: {text_data}")
+
+                    # 檢查是否有圖片數據需要接收
+                    if "uploaded_image_" in text_data:
+                        # 提取圖片名稱
+                        start_index = text_data.find("uploaded_image_")
+                        image_name = text_data[start_index:].split()[0]  # 獲取圖片名稱
+                        image_name = f"{image_name}.png"  # 加上文件擴展名
+                        wait_for_imagedata = True
+                        
+                    
+
                     
                     # 回應客戶端
                     conn.sendall(b"Data received successfully")
