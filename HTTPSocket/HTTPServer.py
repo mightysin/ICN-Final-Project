@@ -6,7 +6,7 @@ import time
 import socket
 
 # 全局變數儲存訊息
-messages = []
+messages = ["test1", "{\"type\": \"message\", \"message\": }","client RW8W6(2024-12-20 22:52:24) -> [Image Uploaded: https://7328-182-235-182-47.ngrok-free.app/get_image/uploaded_image_1734706344.png]", "client RW8W6(2024-12-20 22:53:31) -> [Image Uploaded: https://7328-182-235-182-47.ngrok-free.app/get_image/uploaded_image_1734706411.png]"]
 JSON_FILE = "messages.json"  # 儲存訊息的檔案
 
 
@@ -124,13 +124,14 @@ def backup_to_database():
             for message in messages:
                 s_sock.sendall(message.encode('utf-8')) # Send text object to database
                 if "uploaded_image_" in message:
+                    print(f"Response from database: {s_sock.recv(4096).decode('utf-8')}\n")
                     start_index = message.find("uploaded_image_") # Sendn image object to database
                     image_name = message[start_index:-1].split()[0]
                     with open(os.path.join("uploads", f"{image_name}"), "rb") as f:
                         image_data = f.read()
                         s_sock.sendall(image_data)
-                print(f"Response from database: {s_sock.recv(4096).decode('utf-8')}") # Print response from database
-            s_sock.close()
+                print(f"Response from database: {s_sock.recv(4096).decode('utf-8')}\n") # Print response from database
+            print(f"Response from database: {s_sock.recv(4096).decode('utf-8')}\n")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -139,11 +140,13 @@ serverPort = 12000
 server = HTTPServer(('0.0.0.0', serverPort), MyHandler)
 
 print(f"Server started at http://localhost:{serverPort}")
-while True:
-    server.handle_request()
-    if stop_signal:
-        print("Server stopped")
-        break
-server.server_close()
-
+# while True:
+#     server.handle_request()
+#     if stop_signal:
+#         print("Server stopped")
+#         break
+# server.server_close()
+messages.append(f"ENDOFDATA")
+for message in messages:
+    print(message)
 backup_to_database()
